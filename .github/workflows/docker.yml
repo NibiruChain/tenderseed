@@ -32,5 +32,4 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
-          tags: |
-           ghcr.io/${{ github.repository_owner }}/tenderseed:latest
+          tags: ghcr.io/nibiruchain/tenderseed:latest
