@@ -65,8 +65,8 @@ func (s *PeerChecker) processPeers() {
 					s.addAttempt(peer)
 					s.addrBook.MarkAttempt(peer)
 					if s.reachedAttemptsLimit(peer) {
-						s.resetAttempts(peer)
 						s.log.Info("marking peer as bad", "peer", peer, "attempts", s.attemptsNumber(peer))
+						s.resetAttempts(peer)
 						s.addrBook.MarkBad(peer, time.Hour)
 					}
 				} else {
