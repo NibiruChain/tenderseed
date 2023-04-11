@@ -140,7 +140,7 @@ func (args *StartArgs) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...in
 		}
 		if err := book.AddAddress(s, &p2p.NetAddress{
 			ID:   nodeKey.ID(),
-			IP:   net.ParseIP("localhost"),
+			IP:   net.ParseIP("0.0.0.0"),
 			Port: 26656,
 		}); err != nil {
 			panic(err)
