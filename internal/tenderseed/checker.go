@@ -54,7 +54,6 @@ func (s *PeerChecker) Stop() {
 
 func (s *PeerChecker) processPeers() {
 	s.log.Info("evaluating peers")
-	defer s.addrBook.Save()
 
 	for _, peer := range s.addrBook.GetSelection() {
 		select {

@@ -147,7 +147,6 @@ func (args *StartArgs) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...in
 		}
 		book.MarkGood(s.ID)
 	}
-	book.Save()
 
 	pexReactor := pex.NewReactor(book, &pex.ReactorConfig{
 		SeedMode: true,
