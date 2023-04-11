@@ -4,8 +4,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/google/subcommands"
 	"github.com/tendermint/tendermint/config"
@@ -49,7 +51,7 @@ func (args *StartArgs) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...in
 		log.NewSyncWriter(os.Stdout),
 	)
 
-	chainID := args.SeedConfig.ChainID    
+	chainID := args.SeedConfig.ChainID
 	nodeKeyFilePath := args.SeedConfig.NodeKeyFile
 	addrBookFilePath := args.SeedConfig.AddrBookFile
 
@@ -129,9 +131,27 @@ func (args *StartArgs) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...in
 	book := pex.NewAddrBook(addrBookFilePath, args.SeedConfig.AddrBookStrict)
 	book.SetLogger(filteredLogger.With("module", "book"))
 
+	seeds := tmstrings.SplitAndTrim(args.SeedConfig.Seeds, ",", " ")
+
+	for _, seed := range seeds {
+		s, err := p2p.NewNetAddressString(seed)
+		if err != nil {
+			panic(err)
+		}
+		if err := book.AddAddress(s, &p2p.NetAddress{
+			ID:   nodeKey.ID(),
+			IP:   net.ParseIP("localhost"),
+			Port: 26656,
+		}); err != nil {
+			panic(err)
+		}
+		book.MarkGood(s.ID)
+	}
+	book.Save()
+
 	pexReactor := pex.NewReactor(book, &pex.ReactorConfig{
 		SeedMode: true,
-		Seeds:    tmstrings.SplitAndTrim(args.SeedConfig.Seeds, ",", " "),
+		Seeds:    seeds,
 	})
 	pexReactor.SetLogger(filteredLogger.With("module", "pex"))
 
@@ -144,8 +164,11 @@ func (args *StartArgs) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...in
 	// last
 	sw.SetNodeInfo(nodeInfo)
 
+	checker := tenderseed.NewPeerChecker(sw, book, 30*time.Second, logger)
+
 	tmos.TrapSignal(logger, func() {
 		logger.Info("shutting down...")
+		checker.Stop()
 		book.Save()
 		err := sw.Stop()
 		if err != nil {
@@ -153,6 +176,7 @@ func (args *StartArgs) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...in
 		}
 	})
 
+	checker.Start()
 	err = sw.Start()
 	if err != nil {
 		panic(err)
