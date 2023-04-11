@@ -138,6 +138,10 @@ func (args *StartArgs) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...in
 		if err != nil {
 			panic(err)
 		}
+		logger.Info("adding peer from seeds config",
+			"id", s.ID,
+			"addr", fmt.Sprintf("%s:%d", s.IP, s.Port),
+		)
 		if err := book.AddAddress(s, &p2p.NetAddress{
 			ID:   nodeKey.ID(),
 			IP:   net.ParseIP("0.0.0.0"),
@@ -163,7 +167,7 @@ func (args *StartArgs) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...in
 	// last
 	sw.SetNodeInfo(nodeInfo)
 
-	checker := tenderseed.NewPeerChecker(sw, book, 30*time.Second, logger)
+	checker := tenderseed.NewPeerChecker(book, 30*time.Second, logger)
 
 	tmos.TrapSignal(logger, func() {
 		logger.Info("shutting down...")
@@ -175,11 +179,11 @@ func (args *StartArgs) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...in
 		}
 	})
 
-	checker.Start()
 	err = sw.Start()
 	if err != nil {
 		panic(err)
 	}
+	checker.Start()
 
 	sw.Wait()
 	return subcommands.ExitSuccess

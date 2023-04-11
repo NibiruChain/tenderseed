@@ -13,7 +13,6 @@ const (
 )
 
 type PeerChecker struct {
-	sw       *p2p.Switch
 	addrBook pex.AddrBook
 	period   time.Duration
 	done     chan bool
@@ -21,9 +20,8 @@ type PeerChecker struct {
 	attempts map[string]int
 }
 
-func NewPeerChecker(sw *p2p.Switch, addrBook pex.AddrBook, period time.Duration, log log.Logger) *PeerChecker {
+func NewPeerChecker(addrBook pex.AddrBook, period time.Duration, log log.Logger) *PeerChecker {
 	return &PeerChecker{
-		sw:       sw,
 		addrBook: addrBook,
 		period:   period,
 		log:      log,
