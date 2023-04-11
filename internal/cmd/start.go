@@ -7,7 +7,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/google/subcommands"
 	"github.com/tendermint/tendermint/config"
@@ -128,7 +127,7 @@ func (args *StartArgs) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...in
 		panic(err)
 	}
 
-	book := pex.NewAddrBook(addrBookFilePath, args.SeedConfig.AddrBookStrict)
+	book := tenderseed.NewTenderseedAddrBook(addrBookFilePath, args.SeedConfig.AddrBookStrict)
 	book.SetLogger(filteredLogger.With("module", "book"))
 
 	seeds := tmstrings.SplitAndTrim(args.SeedConfig.Seeds, ",", " ")
@@ -167,7 +166,7 @@ func (args *StartArgs) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...in
 	// last
 	sw.SetNodeInfo(nodeInfo)
 
-	checker := tenderseed.NewPeerChecker(book, 30*time.Second, logger)
+	checker := tenderseed.NewPeerChecker(book, logger)
 
 	tmos.TrapSignal(logger, func() {
 		logger.Info("shutting down...")
