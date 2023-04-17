@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/google/subcommands"
 	"github.com/tendermint/tendermint/config"
@@ -166,7 +167,7 @@ func (args *StartArgs) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...in
 	// last
 	sw.SetNodeInfo(nodeInfo)
 
-	checker := tenderseed.NewPeerChecker(book, logger)
+	checker := tenderseed.NewPeerChecker(book, logger, 30*time.Second)
 
 	tmos.TrapSignal(logger, func() {
 		logger.Info("shutting down...")

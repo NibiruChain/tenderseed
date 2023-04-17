@@ -17,25 +17,29 @@ type PeerChecker struct {
 	done     chan bool
 	log      log.Logger
 	attempts map[string]int
+	period   time.Duration
 }
 
-func NewPeerChecker(addrBook pex.AddrBook, log log.Logger) *PeerChecker {
+func NewPeerChecker(addrBook pex.AddrBook, log log.Logger, period time.Duration) *PeerChecker {
 	return &PeerChecker{
 		addrBook: addrBook,
 		log:      log,
 		attempts: make(map[string]int),
+		period:   period,
 	}
 }
 
 func (s *PeerChecker) Start() {
 	s.done = make(chan bool)
+	ticker := time.NewTicker(s.period)
 
 	go func() {
+		defer ticker.Stop()
 		for {
 			select {
 			case <-s.done:
 				return
-			default:
+			case <-ticker.C:
 				s.processPeers()
 			}
 		}
