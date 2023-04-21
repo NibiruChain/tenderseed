@@ -9,10 +9,11 @@ import (
 )
 
 const (
-	defaultAttemptsLimit = 3
+	defaultAttemptsLimit = 2
 )
 
 type PeerChecker struct {
+	sw       *p2p.Switch
 	addrBook pex.AddrBook
 	done     chan bool
 	log      log.Logger
@@ -20,8 +21,9 @@ type PeerChecker struct {
 	period   time.Duration
 }
 
-func NewPeerChecker(addrBook pex.AddrBook, log log.Logger, period time.Duration) *PeerChecker {
+func NewPeerChecker(sw *p2p.Switch, addrBook pex.AddrBook, log log.Logger, period time.Duration) *PeerChecker {
 	return &PeerChecker{
+		sw:       sw,
 		addrBook: addrBook,
 		log:      log,
 		attempts: make(map[string]int),
@@ -58,21 +60,18 @@ func (s *PeerChecker) processPeers() {
 		case <-s.done:
 			return
 		default:
-			if peer != nil {
-				if conn, err := peer.DialTimeout(time.Second); err != nil {
-					s.addAttempt(peer)
-					s.addrBook.MarkAttempt(peer)
-					if s.reachedAttemptsLimit(peer) {
-						s.log.Info("marking peer as bad", "peer", peer, "attempts", s.attemptsNumber(peer))
-						s.resetAttempts(peer)
-						s.addrBook.MarkBad(peer, time.Hour)
-					}
-				} else {
+			if err := s.sw.DialPeerWithAddress(peer); err != nil {
+				s.addAttempt(peer)
+				s.addrBook.MarkAttempt(peer)
+				if s.reachedAttemptsLimit(peer) {
+					s.log.Info("marking peer as bad", "peer", peer, "attempts", s.attemptsNumber(peer))
 					s.resetAttempts(peer)
-					conn.Close()
-					s.log.Info("marking peer as good", "peer", peer, "attempts", s.attemptsNumber(peer))
-					s.addrBook.MarkGood(peer.ID)
+					s.addrBook.MarkBad(peer, time.Hour)
 				}
+			} else {
+				s.resetAttempts(peer)
+				s.log.Info("marking peer as good", "peer", peer, "attempts", s.attemptsNumber(peer))
+				s.addrBook.MarkGood(peer.ID)
 			}
 		}
 

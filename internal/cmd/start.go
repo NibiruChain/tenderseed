@@ -167,7 +167,7 @@ func (args *StartArgs) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...in
 	// last
 	sw.SetNodeInfo(nodeInfo)
 
-	checker := tenderseed.NewPeerChecker(book, logger, 30*time.Second)
+	checker := tenderseed.NewPeerChecker(sw, book, logger, 30*time.Second)
 
 	tmos.TrapSignal(logger, func() {
 		logger.Info("shutting down...")
